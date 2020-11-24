@@ -3,7 +3,7 @@
     Breaking changes from 0.5 to 0.6 can be found here: 
     https://solidity.readthedocs.io/en/v0.6.12/060-breaking-changes.html
 */
-
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
 contract SimpleBank {
@@ -26,13 +26,13 @@ contract SimpleBank {
     //
     
     /* Add an argument for this event, an accountAddress */
-    event LogEnrolled(address accountAddress);
+    event LogEnrolled(address _address);
 
     /* Add 2 arguments for this event, an accountAddress and an amount */
     event LogDepositMade(address accountAddress, uint amount);
 
     /* Create an event called LogWithdrawal */
-    /* Add 3 arguments for this event, an accountAddress, withdrawAmount and a newBalance */
+    /* Add 3 arguments for this event, an accountAddress, accountAddress and a newBalance */
     event LogWithdrawal(address accountAddress, uint withdrawAmount, uint newBalance);
 
     //
@@ -54,21 +54,32 @@ contract SimpleBank {
         revert();
     }
 
+    receive() external payable { 
+        revert(); 
+    }
+
     /// @notice Get balance
     /// @return The balance of the user
     // A SPECIAL KEYWORD prevents function from editing state variables;
     // allows function to run locally/off blockchain
-    function getBalance() public returns (uint) {
+    function getBalance() public view returns (uint) {
         /* Get the balance of the sender of this transaction */
-        return balances[msg.sender];
+        address user = msg.sender;
+
+        return balances[user];
     }
 
     /// @notice Enroll a customer with the bank
     /// @return The users enrolled status
     // Emit the appropriate event
-    function enroll() public returns (bool){
-        emit LogEnrolled(msg.sender);
-        return enrolled[msg.sender];
+    function enroll() public returns (bool) {
+        address user = msg.sender;
+
+        enrolled[user] = true;
+
+        emit LogEnrolled(user);
+
+        return enrolled[user];
     }
 
     /// @notice Deposit ether into bank
@@ -80,14 +91,13 @@ contract SimpleBank {
     function deposit() public payable returns (uint) {
         /* Add the amount to the user's balance, call the event associated with a deposit,
           then return the balance of the user */
-          
+        address user = msg.sender;
 
-        require(enrolled[msg.sender]);
+        require(enrolled[user]);
 
-        balances[msg.sender] += msg.value;
+        balances[user] += msg.value;
 
-        emit LogDepositMade(msg.sender, msg.value);
-        return balances[msg.sender];
+        emit LogDepositMade(user, msg.value);
     }
 
     /// @notice Withdraw ether from bank
@@ -108,8 +118,7 @@ contract SimpleBank {
 
            user.transfer(withdrawAmount);
 
-           emit LogWithdrawal(msg.sender, withdrawAmount, balances[user]);
-           return balances[msg.sender];
+           emit LogWithdrawal(user, withdrawAmount, balances[user]);
     }
 
 }
